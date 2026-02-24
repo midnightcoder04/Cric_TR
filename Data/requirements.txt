@@ -1,0 +1,22 @@
+# Cricket Analytics Engine — Python dependencies
+# Install with:  pip install -r requirements.txt
+
+# Core data stack
+pandas==2.2.2
+numpy==1.26.4
+
+# Database
+# SQLite ships with Python; install this for easy inspection/migration later
+sqlalchemy==2.0.30
+
+# HTTP downloads
+requests==2.31.0
+tqdm==4.66.4            # progress bars for downloads
+
+# Feature engineering / stats
+scipy==1.13.0
+scikit-learn==1.5.0     # used for preprocessing helpers in Phase 2
+
+# Utilities
+python-dateutil==2.9.0
+loguru==0.7.2           # structured logging (drop-in replacement for logging)
