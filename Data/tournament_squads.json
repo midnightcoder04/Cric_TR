@@ -1,0 +1,231 @@
+{
+  "tournaments": [
+    {
+      "name": "2026 ICC Men's T20 World Cup",
+      "teams": [
+        {
+          "country": "Australia",
+          "squad": [
+            "Mitchell Marsh (c)",
+            "Xavier Bartlett",
+            "Cooper Connolly",
+            "Tim David",
+            "Ben Dwarshuis",
+            "Cameron Green",
+            "Nathan Ellis",
+            "Travis Head",
+            "Josh Inglis",
+            "Matthew Kuhnemann",
+            "Glenn Maxwell",
+            "Matthew Renshaw",
+            "Steve Smith",
+            "Marcus Stoinis",
+            "Adam Zampa"
+          ]
+        },
+        {
+          "country": "England",
+          "squad": [
+            "Harry Brook (c)",
+            "Rehan Ahmed",
+            "Jofra Archer",
+            "Tom Banton",
+            "Jacob Bethell",
+            "Jos Buttler",
+            "Sam Curran",
+            "Liam Dawson",
+            "Ben Duckett",
+            "Will Jacks",
+            "Jamie Overton",
+            "Adil Rashid",
+            "Phil Salt",
+            "Josh Tongue",
+            "Luke Wood"
+          ]
+        },
+        {
+          "country": "Pakistan",
+          "squad": [
+            "Salman Ali Agha (c)",
+            "Abrar Ahmed",
+            "Babar Azam",
+            "Faheem Ashraf",
+            "Fakhar Zaman",
+            "Khawaja Nafay",
+            "Mohammad Nawaz",
+            "Mohammad Salman Mirza",
+            "Naseem Shah",
+            "Sahibzada Farhan",
+            "Saim Ayub",
+            "Shaheen Shah Afridi",
+            "Shadab Khan",
+            "Usman Khan",
+            "Usman Tariq"
+          ]
+        },
+        {
+          "country": "South Africa",
+          "squad": [
+            "Aiden Markram (c)",
+            "Corbin Bosch",
+            "Dewald Brevis",
+            "Quinton de Kock",
+            "Marco Jansen",
+            "George Linde",
+            "Keshav Maharaj",
+            "Kwena Maphaka",
+            "David Miller",
+            "Lungi Ngidi",
+            "Anrich Nortje",
+            "Kagiso Rabada",
+            "Ryan Rickelton",
+            "Jason Smith",
+            "Tristan Stubbs"
+          ]
+        },
+        {
+          "country": "New Zealand",
+          "squad": [
+            "Mitchell Santner (c)",
+            "Finn Allen",
+            "Mark Chapman",
+            "Devon Conway",
+            "Jacob Duffy",
+            "Lockie Ferguson",
+            "Matt Henry",
+            "Kyle Jamieson",
+            "Cole McConchie",
+            "Daryl Mitchell",
+            "James Neesham",
+            "Glenn Phillips",
+            "Rachin Ravindra",
+            "Tim Seifert",
+            "Ish Sodhi"
+          ]
+        },
+        {
+          "country": "Sri Lanka",
+          "squad": [
+            "Dasun Shanaka (c)",
+            "Charith Asalanka",
+            "Dushmantha Chameera",
+            "Wanindu Hasaranga",
+            "Janith Liyanage",
+            "Eshan Malinga",
+            "Kamindu Mendis",
+            "Kusal Mendis",
+            "Kamil Mishara",
+            "Pathum Nissanka",
+            "Matheesha Pathirana",
+            "Kusal Janith Perera",
+            "Pavan Rathnayake",
+            "Maheesh Theekshana",
+            "Dunith Wellalage"
+          ]
+        },
+        {
+          "country": "Bangladesh",
+          "squad": [
+            "Litton Das (c)",
+            "Nasum Ahmed",
+            "Taskin Ahmed",
+            "Mohammad Parvez Hossain Emon",
+            "Saif Hassan",
+            "Shak Mahedi Hasan",
+            "Tanzid Hasan",
+            "Shamim Hossain",
+            "Rishad Hossain",
+            "Tawhid Hridoy",
+            "Shoriful Islam",
+            "Mustafizur Rahman",
+            "Tanzim Hasan Sakib",
+            "Md Shaifuddin",
+            "Quazi Nurul Hasan Sohan"
+          ],
+          "note": "Bangladesh officially announced this squad in January 2026 but later withdrew from the tournament over security concerns. Scotland took their place."
+        },
+        {
+          "country": "Afghanistan",
+          "squad": [
+            "Rashid Khan (c)",
+            "Noor Ahmad",
+            "Abdullah Ahmadzai",
+            "Sediqullah Atal",
+            "Fazalhaq Farooqi",
+            "Rahmanullah Gurbaz",
+            "Mohammad Ishaq",
+            "Shahidullah Kamal",
+            "Mohammad Nabi",
+            "Gulbadin Naib",
+            "Azmatullah Omarzai",
+            "Mujeeb Ur Rahman",
+            "Darwish Rasooli",
+            "Naveen Ul Haq",
+            "Ibrahim Zadran"
+          ]
+        },
+        {
+          "country": "West Indies",
+          "squad": [
+            "Shai Hope (c)",
+            "Johnson Charles",
+            "Roston Chase",
+            "Matthew Forde",
+            "Shimron Hetmyer",
+            "Jason Holder",
+            "Akeal Hosein",
+            "Shamar Joseph",
+            "Brandon King",
+            "Gudakesh Motie",
+            "Rovman Powell",
+            "Sherfane Rutherford",
+            "Quentin Sampson",
+            "Jayden Seales",
+            "Romario Shepherd"
+          ]
+        },
+        {
+          "country": "Zimbabwe",
+          "squad": [
+            "Sikandar Raza (c)",
+            "Brian Bennett",
+            "Ryan Burl",
+            "Graeme Cremer",
+            "Ben Curran",
+            "Bradley Evans",
+            "Clive Madande",
+            "Tinotenda Maposa",
+            "Tadiwanashe Marumani",
+            "Wellington Masakadza",
+            "Tony Munyonga",
+            "Tashinga Musekiwa",
+            "Blessing Muzarabani",
+            "Dion Myers",
+            "Richard Ngarava"
+          ]
+        },
+        {
+          "country": "Ireland",
+          "squad": [
+            "Lorcan Tucker (c)",
+            "Mark Adair",
+            "Ross Adair",
+            "Ben Calitz",
+            "Curtis Campher",
+            "Gareth Delany",
+            "George Dockrell",
+            "Matthew Humphreys",
+            "Josh Little",
+            "Barry McCarthy",
+            "Harry Tector",
+            "Tim Tector",
+            "Sam Topping",
+            "Ben White",
+            "Craig Young"
+          ],
+          "note": "Lorcan Tucker assumed the captaincy and Sam Topping was brought in after Paul Stirling was ruled out right before the tournament."
+        }
+      ]
+    }
+  ]
+}

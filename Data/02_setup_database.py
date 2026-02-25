@@ -29,10 +29,12 @@ Usage:
 """
 
 import argparse
+import csv
 import re
 import sys
 from pathlib import Path
 from datetime import datetime, date
+from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -198,25 +200,48 @@ def get_or_create_venue(session: Session, cache: dict, name: str, city: str = ""
 
 # ─── Info File Parser ────────────────────────────────────────────────────────
 
-def parse_info_file(info_path: Path) -> dict | None:
+def parse_info_file(info_path: Path) -> Optional[dict]:
     """
     Parse a Cricsheet *_info.csv file and return a dict of match metadata.
     Returns None if the file is malformed.
     """
-    rows = pd.read_csv(info_path, header=None, names=["type", "key", "value"])
     info = {}
-    for _, row in rows.iterrows():
-        if row["type"] == "info":
-            key = str(row["key"]).strip()
-            val = str(row["value"]).strip() if pd.notna(row["value"]) else ""
-            # Multi-value keys (like team, player) become lists
-            if key in info:
-                if isinstance(info[key], list):
-                    info[key].append(val)
-                else:
-                    info[key] = [info[key], val]
-            else:
-                info[key] = val
+    
+    try:
+        with open(info_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if len(row) < 2:
+                    continue
+                    
+                row_type = row[0].strip()
+                
+                if row_type == "info":
+                    key = row[1].strip()
+                    
+                    # Player rows have 4 columns: info,player,team,name
+                    # We collect the player name (4th column)
+                    if key == "player" and len(row) >= 4:
+                        player_name = row[3].strip()
+                        if "player" in info:
+                            info["player"].append(player_name)
+                        else:
+                            info["player"] = [player_name]
+                    # Regular 3-column rows (including "team")
+                    elif len(row) >= 3:
+                        val = row[2].strip()
+                        # Multi-value keys become lists
+                        if key in info:
+                            if isinstance(info[key], list):
+                                info[key].append(val)
+                            else:
+                                info[key] = [info[key], val]
+                        else:
+                            info[key] = val
+    except Exception as e:
+        logger.debug(f"Error parsing {info_path}: {e}")
+        return None
+        
     return info if info else None
 
 
@@ -263,14 +288,20 @@ def ingest_format(fmt: str, session: Session,
         team2   = teams[1] if len(teams) > 1 else ""
 
         raw_date = info.get("date", "")
-        try:
-            # Cricsheet dates can be "2023-01-15" or list for multi-day
-            match_date = datetime.strptime(
-                raw_date if isinstance(raw_date, str) else raw_date[0],
-                "%Y-%m-%d"
-            ).date()
-        except (ValueError, IndexError):
-            match_date = None
+        match_date = None
+        if raw_date:
+            try:
+                # Cricsheet dates can be "2023/01/15" or "2023-01-15" or list for multi-day
+                date_str = raw_date if isinstance(raw_date, str) else raw_date[0]
+                # Try with slashes first (Cricsheet format), then hyphens
+                for date_fmt in ["%Y/%m/%d", "%Y-%m-%d"]:
+                    try:
+                        match_date = datetime.strptime(date_str, date_fmt).date()
+                        break
+                    except ValueError:
+                        continue
+            except (ValueError, IndexError, TypeError):
+                pass
 
         venue_name = info.get("venue", "Unknown Venue")
         city       = info.get("city", "")
@@ -292,10 +323,20 @@ def ingest_format(fmt: str, session: Session,
             logger.debug(f"Failed to read {delivery_path.name}: {e}")
             continue
 
+        # Parse the "ball" column which contains "over.ball_number" format BEFORE calculating overs
+        if "ball" in df.columns and "over" not in df.columns:
+            df[["over", "ball_num"]] = df["ball"].astype(str).str.split(".", expand=True)
+            df["over"] = pd.to_numeric(df["over"], errors="coerce").fillna(0).astype(int)
+            df["ball_num"] = pd.to_numeric(df["ball_num"], errors="coerce").fillna(0).astype(int)
+        elif "ball" not in df.columns:
+            df["over"] = 0
+            df["ball_num"] = 0
+
         # Compute actual overs bowled (innings 1 is enough for the flag)
         inn1 = df[df.get("innings", pd.Series(dtype=int)) == 1] if "innings" in df.columns else df
         max_over      = inn1["over"].max() if "over" in inn1.columns else 0
-        total_overs   = float(max_over) if pd.notna(max_over) else 0.0
+        # Overs are 0-indexed (over 0 = 1st over, over 19 = 20th over)
+        total_overs   = float(max_over + 1) if pd.notna(max_over) and max_over >= 0 else 0.0
         is_short      = total_overs < min_overs
         is_rain       = "rain" in str(info.get("method", "")).lower() or \
                         "d/l" in str(info.get("result", "")).lower()
@@ -323,19 +364,20 @@ def ingest_format(fmt: str, session: Session,
         if isinstance(all_players_raw, str):
             all_players_raw = [all_players_raw]
 
+        # Track which players we've already added to avoid duplicates
+        players_in_match = set()
+        
         for p_name in all_players_raw:
             pid = get_or_create_player(session, player_cache, p_name)
-            # Determine which team this player belongs to
-            # (Cricsheet info files list teams before players so we approximate)
-            pm = PlayerMatch(player_id=pid, match_id=match_id, team="")
-            session.add(pm)
+            # Only add if not already added
+            if pid not in players_in_match:
+                # Determine which team this player belongs to
+                # (Cricsheet info files list teams before players so we approximate)
+                pm = PlayerMatch(player_id=pid, match_id=match_id, team="")
+                session.add(pm)
+                players_in_match.add(pid)
 
         # ── insert deliveries ───────────────────────────────────────────────
-        expected_cols = {
-            "innings", "over", "ball", "batting_team",
-            "striker", "non_striker", "bowler",
-            "runs_off_bat", "extras", "runs_off_bat",
-        }
         # Normalise column names (Cricsheet uses slightly different names in some packs)
         col_map = {
             "runs_off_bat": "runs_batter",
@@ -352,11 +394,22 @@ def ingest_format(fmt: str, session: Session,
             player_out_raw  = str(row.get("player_dismissed", "")) if pd.notna(row.get("player_dismissed")) else None
             player_out_id   = get_or_create_player(session, player_cache, player_out_raw) if player_out_raw else None
 
+            # Add players to player_matches if not already tracked
+            for pid in [batter_id, non_striker_id, bowler_id, player_out_id]:
+                if pid and pid not in players_in_match:
+                    pm = PlayerMatch(player_id=pid, match_id=match_id, team="")
+                    session.add(pm)
+                    players_in_match.add(pid)
+
+            # Convert wides/noballs to boolean (handle NaN, empty strings, and 0 as False)
+            wides_val = pd.to_numeric(row.get("wides"), errors='coerce')
+            noballs_val = pd.to_numeric(row.get("noballs"), errors='coerce')
+            
             delivery = Delivery(
                 match_id       = match_id,
                 innings        = int(row.get("innings", 1) or 1),
                 over           = int(row.get("over", 0) or 0),
-                ball           = int(row.get("ball", 0) or 0),
+                ball           = int(row.get("ball_num", 0) or 0),
                 batting_team   = str(row.get("batting_team", "") or ""),
                 batter_id      = batter_id,
                 non_striker_id = non_striker_id,
@@ -368,16 +421,16 @@ def ingest_format(fmt: str, session: Session,
                                     (row.get("runs_extras", 0) or 0)) or 0),
                 wicket_kind    = wicket_kind if wicket_kind else None,
                 player_out_id  = player_out_id,
-                is_wide        = bool(row.get("wides", 0)),
-                is_noball      = bool(row.get("noballs", 0)),
+                is_wide        = bool(pd.notna(wides_val) and wides_val > 0),
+                is_noball      = bool(pd.notna(noballs_val) and noballs_val > 0),
             )
             session.add(delivery)
             n_deliveries += 1
 
         n_matches += 1
 
-        # Commit every 200 matches to avoid huge in-memory transactions
-        if n_matches % 200 == 0:
+        # Commit every 400 matches to avoid huge in-memory transactions
+        if n_matches % 400 == 0:
             session.commit()
             logger.debug(f"  … {n_matches} matches committed")
 

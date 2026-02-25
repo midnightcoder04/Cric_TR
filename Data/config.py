@@ -76,4 +76,4 @@ KNOWN_PITCH_TYPES = {
 }
 
 # ── Logging ────────────────────────────────────────────────────────────────
-LOG_LEVEL = "INFO"   # DEBUG | INFO | WARNING | ERROR
+LOG_LEVEL = "DEBUG"   # DEBUG | INFO | WARNING | ERROR

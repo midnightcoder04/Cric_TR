@@ -37,6 +37,7 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
@@ -59,7 +60,7 @@ PARSED = Path(PARSED_DIR)
 
 # ─── Data Loading ─────────────────────────────────────────────────────────────
 
-def load_deliveries(formats: list[str] | None = None) -> pd.DataFrame:
+def load_deliveries(formats: Optional[List[str]] = None) -> pd.DataFrame:
     path = PARSED / "deliveries_clean.csv"
     if not path.exists():
         logger.error(f"deliveries_clean.csv not found at {path}. Run 03_clean_data.py first.")
@@ -96,7 +97,7 @@ def build_batting_profiles(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Building batting profiles …")
 
     # Legal deliveries faced (exclude wides which bowlers concede, not batters face)
-    balls = df[~df["is_wide"]].copy()
+    balls = df[df["is_wide"] == 0].copy()
     balls["is_dismissal"] = balls["player_dismissed"] == balls["batter"]
 
     grp = balls.groupby(["batter", "match_format", "match_id", "date", "venue", "pitch_type"])
@@ -105,18 +106,30 @@ def build_batting_profiles(df: pd.DataFrame) -> pd.DataFrame:
         balls  = ("runs_batter", "count"),
         outs   = ("is_dismissal", "sum"),
     ).reset_index()
+    
+    logger.debug(f"Total innings aggregated: {len(innings)}")
 
     innings["strike_rate"] = (innings["runs"] / innings["balls"].clip(lower=1)) * 100
 
     # Reference date = latest match in dataset
     ref_date = df["date"].max()
-    innings["decay_w"] = compute_decay_weight(innings["date"], ref_date)
+    logger.debug(f"Reference date for decay weights: {ref_date}, type: {type(ref_date)}")
+    
+    if pd.isna(ref_date):
+        logger.warning("No valid dates found in dataset - skipping decay weights")
+        innings["decay_w"] = 1.0
+    else:
+        innings["decay_w"] = compute_decay_weight(innings["date"], ref_date)
 
     profiles = []
+    total_player_formats = len(innings.groupby(["batter", "match_format"]))
+    filtered_count = 0
+    
     for (batter, fmt), grp_df in innings.groupby(["batter", "match_format"]):
         grp_df = grp_df.sort_values("date")
 
         if len(grp_df) < MIN_BATTING_INNINGS:
+            filtered_count += 1
             continue
 
         career_runs  = grp_df["runs"].sum()
@@ -171,6 +184,8 @@ def build_batting_profiles(df: pd.DataFrame) -> pd.DataFrame:
             "sr_on_balanced":   round(venue_perf.get("balanced", np.nan), 2),
         })
 
+    logger.debug(f"Built {len(profiles)} profiles from {total_player_formats} player-format combinations ({filtered_count} filtered out for < {MIN_BATTING_INNINGS} innings)")
+    
     result = pd.DataFrame(profiles)
     out = PARSED / "player_batting_profiles.csv"
     result.to_csv(out, index=False)
@@ -194,7 +209,7 @@ def build_bowling_profiles(df: pd.DataFrame) -> pd.DataFrame:
     )
     # Legal balls for economy (wides & no-balls DO count)
     # But for strike rate and average, exclude wides
-    legal = balls[~balls["is_wide"] & ~balls["is_noball"]].copy()
+    legal = balls[(balls["is_wide"] == 0) & (balls["is_noball"] == 0)].copy()
 
     grp = balls.groupby(["bowler", "match_format", "match_id", "date", "venue", "pitch_type"])
     innings = grp.agg(
@@ -313,7 +328,7 @@ MIN_MATCHUP_BALLS = 10   # ignore matchups with fewer balls (too noisy)
 def build_matchup_stats(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Building batter-vs-bowler matchup stats …")
 
-    balls = df[~df["is_wide"]].copy()
+    balls = df[df["is_wide"] == 0].copy()
     balls["is_dismissal"] = (
         (balls["player_dismissed"] == balls["batter"]) &
         (balls["wicket_kind"].notna()) &
@@ -339,7 +354,137 @@ def build_matchup_stats(df: pd.DataFrame) -> pd.DataFrame:
     return grp
 
 
-# ─── Feature 5: Player Impact Score (Target Variable) ────────────────────────
+# ─── Feature 5: Opponent-Specific Profiles ────────────────────────────────────
+
+MIN_OPPONENT_INNINGS = 3   # minimum innings vs an opponent to include
+
+
+def build_opponent_profiles(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build per-player stats grouped by opponent team.
+    Returns batting and bowling performance vs each specific opponent nation.
+    
+    Output columns:
+      - player, match_format, opponent_team
+      - vs_opp_bat_innings, vs_opp_bat_runs, vs_opp_bat_avg, vs_opp_bat_sr
+      - vs_opp_bowl_innings, vs_opp_bowl_wickets, vs_opp_bowl_economy, vs_opp_bowl_avg
+    """
+    logger.info("Building opponent-specific profiles …")
+    
+    # First, determine opponent team for each delivery
+    df_opp = df.copy()
+    
+    # For batters: opponent is the fielding team (not their batting team)
+    # batting_team is the team batting, so opponent is team1 if batting_team==team2, else team2
+    df_opp["batter_opponent"] = df_opp.apply(
+        lambda row: row["team2"] if row["batting_team"] == row["team1"] else row["team1"],
+        axis=1
+    )
+    
+    # For bowlers: opponent is the batting team (they bowl to the batting side)
+    df_opp["bowler_opponent"] = df_opp["batting_team"]
+    
+    # ── BATTING vs opponent ───────────────────────────────────────────────────
+    bat_balls = df_opp[df_opp["is_wide"] == 0].copy()
+    bat_balls["is_dismissal"] = bat_balls["player_dismissed"] == bat_balls["batter"]
+    
+    bat_grp = bat_balls.groupby(
+        ["batter", "match_format", "batter_opponent", "match_id", "date"]
+    ).agg(
+        runs  = ("runs_batter", "sum"),
+        balls = ("runs_batter", "count"),
+        outs  = ("is_dismissal", "sum"),
+    ).reset_index()
+    
+    # Aggregate by player × format × opponent
+    bat_profiles = []
+    for (player, fmt, opp), grp_df in bat_grp.groupby(["batter", "match_format", "batter_opponent"]):
+        if len(grp_df) < MIN_OPPONENT_INNINGS:
+            continue
+            
+        total_runs  = grp_df["runs"].sum()
+        total_balls = grp_df["balls"].sum()
+        total_outs  = grp_df["outs"].sum()
+        
+        avg = total_runs / max(total_outs, 1)
+        sr  = (total_runs / max(total_balls, 1)) * 100
+        
+        bat_profiles.append({
+            "player":           player,
+            "match_format":     fmt,
+            "opponent_team":    opp,
+            "vs_opp_bat_innings": len(grp_df),
+            "vs_opp_bat_runs":    total_runs,
+            "vs_opp_bat_avg":     round(avg, 2),
+            "vs_opp_bat_sr":      round(sr, 2),
+        })
+    
+    bat_df = pd.DataFrame(bat_profiles)
+    logger.debug(f"  Built {len(bat_df):,} batting vs opponent records")
+    
+    # ── BOWLING vs opponent ───────────────────────────────────────────────────
+    valid_wickets = {"caught", "bowled", "lbw", "stumped",
+                     "caught and bowled", "hit wicket", "hit the ball twice"}
+    
+    bowl_balls = df_opp.copy()
+    bowl_balls["bowler_wicket"] = (
+        bowl_balls["wicket_kind"].str.lower().isin(valid_wickets) &
+        bowl_balls["player_dismissed"].notna()
+    )
+    
+    bowl_grp = bowl_balls.groupby(
+        ["bowler", "match_format", "bowler_opponent", "match_id", "date"]
+    ).agg(
+        runs_conceded = ("runs_total", "sum"),
+        balls_bowled  = ("runs_total", "count"),
+        wickets       = ("bowler_wicket", "sum"),
+    ).reset_index()
+    
+    # Aggregate by player × format × opponent
+    bowl_profiles = []
+    for (player, fmt, opp), grp_df in bowl_grp.groupby(["bowler", "match_format", "bowler_opponent"]):
+        if len(grp_df) < MIN_OPPONENT_INNINGS:
+            continue
+            
+        total_runs    = grp_df["runs_conceded"].sum()
+        total_balls   = grp_df["balls_bowled"].sum()
+        total_wickets = grp_df["wickets"].sum()
+        
+        economy = (total_runs / (total_balls / 6)) if total_balls else 0
+        avg     = total_runs / max(total_wickets, 1)
+        
+        bowl_profiles.append({
+            "player":              player,
+            "match_format":        fmt,
+            "opponent_team":       opp,
+            "vs_opp_bowl_innings": len(grp_df),
+            "vs_opp_bowl_wickets": total_wickets,
+            "vs_opp_bowl_economy": round(economy, 2),
+            "vs_opp_bowl_avg":     round(avg, 2),
+        })
+    
+    bowl_df = pd.DataFrame(bowl_profiles)
+    logger.debug(f"  Built {len(bowl_df):,} bowling vs opponent records")
+    
+    # ── Merge batting and bowling opponent profiles ──────────────────────────
+    merged = bat_df.merge(
+        bowl_df, 
+        on=["player", "match_format", "opponent_team"], 
+        how="outer"
+    )
+    
+    # Fill NaN for players who only bat or only bowl vs an opponent
+    for col in merged.columns:
+        if col.startswith("vs_opp_"):
+            merged[col] = merged[col].fillna(0)
+    
+    out = PARSED / "opponent_profiles.csv"
+    merged.to_csv(out, index=False)
+    logger.success(f"  {len(merged):,} player × opponent profiles → {out}")
+    return merged
+
+
+# ─── Feature 6: Player Impact Score (Target Variable) ────────────────────────
 
 def build_impact_scores(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -361,7 +506,7 @@ def build_impact_scores(df: pd.DataFrame) -> pd.DataFrame:
 
     # ── Batting aggregates per player per match ──────────────────────────────
     bat = (
-        df[~df["is_wide"]]
+        df[df["is_wide"] == 0]
         .groupby(["batter", "match_id", "match_format", "date", "batting_team", "venue", "pitch_type"])
         .agg(runs=("runs_batter", "sum"), balls=("runs_batter", "count"))
         .reset_index()
@@ -464,6 +609,7 @@ def main() -> None:
     build_bowling_profiles(df)
     build_venue_profiles(df)
     build_matchup_stats(df)
+    build_opponent_profiles(df)
     build_impact_scores(df)
 
     print("\n" + "─" * 60)
