@@ -1,0 +1,22 @@
+# Python
+Data/venv/
+Data/__pycache__/
+Data/**/__pycache__/
+*.pyc
+*.pyo
+
+# Backend
+backend/auth.db
+backend/__pycache__/
+backend/**/__pycache__/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Data
+Data/data/raw/
+Data/data/*.db
+Data/venv
+Data/players
+Data/data
