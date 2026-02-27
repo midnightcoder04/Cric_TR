@@ -16,7 +16,7 @@ const navItems = [
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const navigate = useNavigate()
-  const username = localStorage.getItem('username') || 'User'
+  const username = localStorage.getItem('username') || 'Admin'
 
   async function handleLogout() {
     try { await api.logout() } catch {}
@@ -26,28 +26,28 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-950">
-      {/* Sidebar */}
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar — always dark */}
       <aside
         className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } flex-shrink-0 bg-neutral-900 border-r border-neutral-800 flex flex-col transition-all duration-300`}
+          sidebarOpen ? 'w-64' : 'w-[72px]'
+        } flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col transition-all duration-300`}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-neutral-800">
+        <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-800">
           <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <BarChart3 className="w-5 h-5 text-white" />
+            <BarChart3 className="w-4 h-4 text-white" />
           </div>
           {sidebarOpen && (
-            <div>
-              <p className="font-bold text-neutral-100 leading-tight">Cricket</p>
-              <p className="text-xs text-neutral-500 leading-tight">Analytics Engine</p>
+            <div className="overflow-hidden">
+              <p className="font-bold text-white text-sm leading-tight">CricketAI</p>
+              <p className="text-xs text-gray-400 leading-tight">Analytics Engine</p>
             </div>
           )}
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
@@ -56,44 +56,43 @@ export default function Layout() {
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-teal-600 text-white'
-                    : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800'
-                }`
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                } ${!sidebarOpen ? 'justify-center' : ''}`
               }
+              title={!sidebarOpen ? label : undefined}
             >
-              <Icon size={17} className="flex-shrink-0" />
-              {sidebarOpen && label}
+              <Icon size={18} className="flex-shrink-0" />
+              {sidebarOpen && <span className="truncate">{label}</span>}
             </NavLink>
           ))}
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-neutral-800 p-3 space-y-1">
-          {/* Collapse toggle */}
+        <div className="border-t border-gray-800 p-3 space-y-1">
           <button
             onClick={() => setSidebarOpen(o => !o)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors ${!sidebarOpen ? 'justify-center' : ''}`}
           >
             {sidebarOpen ? (
               <>
-                <X size={17} className="flex-shrink-0" />
+                <X size={18} className="flex-shrink-0" />
                 <span>Collapse</span>
               </>
             ) : (
-              <Menu size={17} className="flex-shrink-0" />
+              <Menu size={18} />
             )}
           </button>
 
-          {/* User + logout */}
-          <div className="flex items-center justify-between px-3 py-2">
+          <div className={`flex items-center gap-3 px-3 py-2 ${!sidebarOpen ? 'justify-center' : 'justify-between'}`}>
             {sidebarOpen && (
               <div className="min-w-0">
-                <p className="text-sm font-medium text-neutral-200 truncate">{username}</p>
-                <p className="text-xs text-neutral-500">Analyst</p>
+                <p className="text-sm font-medium text-gray-200 truncate">{username}</p>
+                <p className="text-xs text-gray-500">Analyst</p>
               </div>
             )}
             <button
               onClick={handleLogout}
-              className={`p-2 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-red-900/20 transition-colors ${sidebarOpen ? '' : 'mx-auto'}`}
+              className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-colors flex-shrink-0"
               title="Logout"
             >
               <LogOut size={16} />
@@ -102,8 +101,8 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-y-auto bg-neutral-950">
+      {/* Main content — light */}
+      <main className="flex-1 overflow-y-auto bg-gray-50">
         <Outlet />
       </main>
     </div>
