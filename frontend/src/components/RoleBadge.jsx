@@ -6,5 +6,5 @@ const map = {
 }
 
 export default function RoleBadge({ role }) {
-  return <span className={map[role] || 'badge bg-slate-700 text-slate-300'}>{role}</span>
+  return <span className={map[role] || 'badge bg-neutral-700 text-neutral-300'}>{role}</span>
 }

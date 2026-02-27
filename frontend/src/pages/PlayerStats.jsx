@@ -9,11 +9,21 @@ import {
 
 const FORMATS = ['T20', 'ODI', 'Test']
 
+const CHART_TOOLTIP_STYLE = {
+  background: '#262626',
+  border: '1px solid #404040',
+  borderRadius: 8,
+  color: '#e5e5e5',
+}
+
 function StatCard({ label, value, unit = '' }) {
   return (
-    <div className="bg-slate-700/40 rounded-xl p-3 text-center">
-      <p className="text-2xl font-bold text-white">{value ?? '—'}<span className="text-sm text-slate-400 ml-1">{unit}</span></p>
-      <p className="text-xs text-slate-400 mt-1">{label}</p>
+    <div className="bg-neutral-700/40 rounded-xl p-3 text-center">
+      <p className="text-2xl font-bold text-neutral-100">
+        {value ?? '—'}
+        <span className="text-sm text-neutral-400 ml-1">{unit}</span>
+      </p>
+      <p className="text-xs text-neutral-400 mt-1">{label}</p>
     </div>
   )
 }
@@ -51,7 +61,6 @@ export default function PlayerStats() {
     p.player?.toLowerCase().includes(search.toLowerCase())
   )
 
-  // Merge batting + bowling for radar chart
   const selectedBat  = batting.find(p => p.player === selected)
   const selectedBowl = bowling.find(p => p.player === selected)
 
@@ -74,12 +83,12 @@ export default function PlayerStats() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <BarChart2 className="text-pitch-400" size={22} />
-        <h1 className="text-2xl font-bold text-white">Player Stats</h1>
+        <BarChart2 className="text-teal-400" size={22} />
+        <h1 className="text-2xl font-bold text-neutral-100">Player Stats</h1>
       </div>
 
       {/* Format tabs */}
-      <div className="flex gap-1 bg-slate-900 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-neutral-900 p-1 rounded-xl w-fit">
         {FORMATS.map(f => (
           <button key={f} onClick={() => setFmt(f)}
             className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${fmt === f ? 'tab-active shadow' : 'tab-inactive'}`}>
@@ -95,7 +104,7 @@ export default function PlayerStats() {
           {/* Player list */}
           <div className="col-span-4 card space-y-3">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
               <input
                 className="input pl-8 text-sm"
                 placeholder="Search player…"
@@ -105,10 +114,14 @@ export default function PlayerStats() {
             </div>
 
             {/* Sub-tab */}
-            <div className="flex gap-1 bg-slate-900/50 p-0.5 rounded-lg">
+            <div className="flex gap-1 bg-neutral-900/50 p-0.5 rounded-lg">
               {['batting', 'bowling'].map(t => (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${tab === t ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}>
+                  className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    tab === t
+                      ? 'bg-neutral-700 text-neutral-100'
+                      : 'text-neutral-400 hover:text-neutral-300'
+                  }`}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
@@ -121,15 +134,15 @@ export default function PlayerStats() {
                   onClick={() => setSelected(p.player)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
                     selected === p.player
-                      ? 'bg-pitch-600/20 border border-pitch-600/30'
-                      : 'hover:bg-slate-700/50'
+                      ? 'bg-teal-600/20 border border-teal-600/30'
+                      : 'hover:bg-neutral-700/50'
                   }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-200 truncate">{p.player}</p>
-                    <p className="text-xs text-slate-500">{p.total_innings} innings</p>
+                    <p className="text-sm text-neutral-200 truncate">{p.player}</p>
+                    <p className="text-xs text-neutral-500">{p.total_innings} innings</p>
                   </div>
-                  <span className="text-sm font-bold text-pitch-400">
+                  <span className="text-sm font-bold text-teal-400">
                     {tab === 'batting'
                       ? (p.career_avg?.toFixed(1) ?? '—')
                       : (p.career_economy?.toFixed(1) ?? '—')}
@@ -142,18 +155,18 @@ export default function PlayerStats() {
           {/* Stats panel */}
           <div className="col-span-8 space-y-4">
             {!selected ? (
-              <div className="card flex flex-col items-center justify-center h-64 text-slate-500">
+              <div className="card flex flex-col items-center justify-center h-64 text-neutral-500">
                 <BarChart2 size={40} className="mb-3 opacity-30" />
                 <p>Select a player to view their statistics</p>
               </div>
             ) : (
               <>
                 <div className="card">
-                  <h2 className="text-lg font-bold text-white mb-4">{selected} — {fmt}</h2>
+                  <h2 className="text-lg font-bold text-neutral-100 mb-4">{selected} — {fmt}</h2>
 
                   {selectedBat && (
                     <>
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Batting</p>
+                      <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Batting</p>
                       <div className="grid grid-cols-4 gap-3 mb-4">
                         <StatCard label="Career Avg" value={selectedBat.career_avg?.toFixed(1)} />
                         <StatCard label="Career SR" value={selectedBat.career_sr?.toFixed(1)} />
@@ -165,7 +178,7 @@ export default function PlayerStats() {
 
                   {selectedBowl && (
                     <>
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Bowling</p>
+                      <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Bowling</p>
                       <div className="grid grid-cols-4 gap-3">
                         <StatCard label="Wickets" value={selectedBowl.career_wickets?.toFixed(0)} />
                         <StatCard label="Economy" value={selectedBowl.career_economy?.toFixed(2)} />
@@ -179,12 +192,12 @@ export default function PlayerStats() {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Radar */}
                   <div className="card">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Profile Radar</p>
+                    <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Profile Radar</p>
                     <ResponsiveContainer width="100%" height={200}>
                       <RadarChart data={radarData}>
-                        <PolarGrid stroke="#334155" />
-                        <PolarAngleAxis dataKey="stat" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                        {selectedBat && <Radar name="Batting" dataKey="bat" stroke="#22c55e" fill="#22c55e" fillOpacity={0.25} />}
+                        <PolarGrid stroke="#404040" />
+                        <PolarAngleAxis dataKey="stat" tick={{ fill: '#a3a3a3', fontSize: 11 }} />
+                        {selectedBat && <Radar name="Batting" dataKey="bat" stroke="#14b8a6" fill="#14b8a6" fillOpacity={0.25} />}
                         {selectedBowl && <Radar name="Bowling" dataKey="bowl" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.25} />}
                       </RadarChart>
                     </ResponsiveContainer>
@@ -193,14 +206,14 @@ export default function PlayerStats() {
                   {/* Pitch SR */}
                   {selectedBat && (
                     <div className="card">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Batting SR by Pitch</p>
+                      <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Batting SR by Pitch</p>
                       <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={pitchBarData} margin={{ left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                          <XAxis dataKey="pitch" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                          <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                          <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }} />
-                          <Bar dataKey="sr" fill="#22c55e" radius={[3, 3, 0, 0]} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
+                          <XAxis dataKey="pitch" tick={{ fill: '#a3a3a3', fontSize: 10 }} />
+                          <YAxis tick={{ fill: '#a3a3a3', fontSize: 10 }} />
+                          <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                          <Bar dataKey="sr" fill="#14b8a6" radius={[3, 3, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>

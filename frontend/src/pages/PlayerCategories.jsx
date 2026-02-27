@@ -11,21 +11,21 @@ function CategorySection({ label, color, description, players }) {
     <div className={`card border ${color}`}>
       <div className="flex items-start justify-between mb-3">
         <div>
-          <h3 className="text-base font-bold text-white">{label}</h3>
-          <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+          <h3 className="text-base font-bold text-neutral-100">{label}</h3>
+          <p className="text-xs text-neutral-400 mt-0.5">{description}</p>
         </div>
-        <span className="text-2xl font-black text-slate-600">{players.length}</span>
+        <span className="text-2xl font-black text-neutral-600">{players.length}</span>
       </div>
       <div className="grid grid-cols-2 gap-1.5">
         {players.map(p => (
-          <div key={p.name} className="flex items-center gap-2 bg-slate-900/50 px-3 py-2 rounded-lg">
+          <div key={p.name} className="flex items-center gap-2 bg-neutral-900/50 px-3 py-2 rounded-lg">
             <div className="w-1.5 h-1.5 rounded-full bg-current opacity-60 flex-shrink-0" />
-            <span className="text-sm text-slate-200 flex-1 truncate">{p.name}</span>
+            <span className="text-sm text-neutral-200 flex-1 truncate">{p.name}</span>
             <RoleBadge role={p.role} />
           </div>
         ))}
         {players.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-500 py-2">No players in this category</p>
+          <p className="col-span-2 text-sm text-neutral-500 py-2">No players in this category</p>
         )}
       </div>
     </div>
@@ -45,17 +45,15 @@ export default function PlayerCategories() {
       .finally(() => setLoading(false))
   }, [fmt])
 
-  const total = cats.team_a.length + cats.team_b.length + cats.team_c.length
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <Layers className="text-pitch-400" size={22} />
-        <h1 className="text-2xl font-bold text-white">Player Categories</h1>
+        <Layers className="text-teal-400" size={22} />
+        <h1 className="text-2xl font-bold text-neutral-100">Player Categories</h1>
       </div>
 
       {/* Format tabs */}
-      <div className="flex gap-1 bg-slate-900 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-neutral-900 p-1 rounded-xl w-fit">
         {FORMATS.map(f => (
           <button key={f} onClick={() => setFmt(f)}
             className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${fmt === f ? 'tab-active shadow' : 'tab-inactive'}`}>
@@ -67,14 +65,14 @@ export default function PlayerCategories() {
       {/* Legend */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Team A', count: cats.team_a.length, color: 'text-pitch-400', desc: 'All-round / Most flexible' },
+          { label: 'Team A', count: cats.team_a.length, color: 'text-teal-400',  desc: 'All-round / Most flexible' },
           { label: 'Team B', count: cats.team_b.length, color: 'text-blue-400',  desc: 'Moderate versatility' },
           { label: 'Team C', count: cats.team_c.length, color: 'text-amber-400', desc: 'Pure specialists' },
         ].map(({ label, count, color, desc }) => (
           <div key={label} className="card text-center">
             <p className={`text-3xl font-black ${color}`}>{count}</p>
-            <p className="text-sm font-semibold text-slate-200 mt-1">{label}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
+            <p className="text-sm font-semibold text-neutral-200 mt-1">{label}</p>
+            <p className="text-xs text-neutral-400 mt-0.5">{desc}</p>
           </div>
         ))}
       </div>
@@ -85,7 +83,7 @@ export default function PlayerCategories() {
         <div className="grid grid-cols-1 gap-6">
           <CategorySection
             label="Team A — Most Flexible"
-            color="border-pitch-600/40"
+            color="border-teal-600/40"
             description="Players who have both batting & bowling profiles. Can bat, bowl, or do both effectively in any situation."
             players={cats.team_a}
           />

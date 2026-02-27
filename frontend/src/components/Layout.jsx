@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
-  Activity, BarChart2, Trophy, Layers, TrendingUp, LogOut, Crosshair
+  BarChart3, BarChart2, Trophy, Layers, TrendingUp, LogOut, Crosshair, Menu, X
 } from 'lucide-react'
 import { api } from '../api/client'
 
@@ -13,6 +14,7 @@ const navItems = [
 ]
 
 export default function Layout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const navigate = useNavigate()
   const username = localStorage.getItem('username') || 'User'
 
@@ -24,16 +26,24 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-neutral-950">
       {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
+      <aside
+        className={`${
+          sidebarOpen ? 'w-64' : 'w-20'
+        } flex-shrink-0 bg-neutral-900 border-r border-neutral-800 flex flex-col transition-all duration-300`}
+      >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-800">
-          <span className="text-2xl">🏏</span>
-          <div>
-            <p className="font-bold text-pitch-400 leading-tight">Cricket</p>
-            <p className="text-xs text-slate-400 leading-tight">Analytics Engine</p>
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-neutral-800">
+          <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <BarChart3 className="w-5 h-5 text-white" />
           </div>
+          {sidebarOpen && (
+            <div>
+              <p className="font-bold text-neutral-100 leading-tight">Cricket</p>
+              <p className="text-xs text-neutral-500 leading-tight">Analytics Engine</p>
+            </div>
+          )}
         </div>
 
         {/* Nav */}
@@ -45,27 +55,45 @@ export default function Layout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-pitch-600/20 text-pitch-400 border border-pitch-600/30'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                    ? 'bg-teal-600 text-white'
+                    : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800'
                 }`
               }
             >
-              <Icon size={17} />
-              {label}
+              <Icon size={17} className="flex-shrink-0" />
+              {sidebarOpen && label}
             </NavLink>
           ))}
         </nav>
 
-        {/* User */}
-        <div className="border-t border-slate-800 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-200">{username}</p>
-              <p className="text-xs text-slate-500">Analyst</p>
-            </div>
+        {/* Footer */}
+        <div className="border-t border-neutral-800 p-3 space-y-1">
+          {/* Collapse toggle */}
+          <button
+            onClick={() => setSidebarOpen(o => !o)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
+          >
+            {sidebarOpen ? (
+              <>
+                <X size={17} className="flex-shrink-0" />
+                <span>Collapse</span>
+              </>
+            ) : (
+              <Menu size={17} className="flex-shrink-0" />
+            )}
+          </button>
+
+          {/* User + logout */}
+          <div className="flex items-center justify-between px-3 py-2">
+            {sidebarOpen && (
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-200 truncate">{username}</p>
+                <p className="text-xs text-neutral-500">Analyst</p>
+              </div>
+            )}
             <button
               onClick={handleLogout}
-              className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+              className={`p-2 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-red-900/20 transition-colors ${sidebarOpen ? '' : 'mx-auto'}`}
               title="Logout"
             >
               <LogOut size={16} />
@@ -75,7 +103,7 @@ export default function Layout() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 overflow-y-auto bg-slate-950">
+      <main className="flex-1 overflow-y-auto bg-neutral-950">
         <Outlet />
       </main>
     </div>
