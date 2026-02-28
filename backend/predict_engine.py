@@ -361,7 +361,13 @@ def get_player_form(players: List[str], fmt: Optional[str] = None, n: int = 5) -
     mask = df["player"].isin(players)
     if fmt:
         mask &= df["match_format"] == fmt.lower()
-    sub = df[mask].sort_values("date", ascending=False)
+    _num_cols = ["bat_score", "runs", "balls", "strike_rate", "bowl_score",
+                 "wickets", "runs_conceded", "balls_bowled", "economy",
+                 "raw_impact", "impact_score"]
+    sub = df[mask].sort_values("date", ascending=False).copy()
+    for _c in _num_cols:
+        if _c in sub.columns:
+            sub[_c] = sub[_c].fillna(0)
     result = []
     for player in players:
         pdata = sub[sub["player"] == player].head(n)
